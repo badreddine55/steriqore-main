@@ -33,13 +33,28 @@ class AuthController extends Controller
         $deviceName = $validated['device_name'] ?? 'mobile-app';
         $token = $user->createToken($deviceName)->plainTextToken;
 
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => 'practitioner',
+            'cabinet_name' => 'Cabinet Dentaire',
+            'cabinet_room' => 'Fauteuil 1',
+            'created_at' => $user->created_at?->toIso8601String(),
+        ];
+
         return response()->json([
             'status' => 'success',
             'message' => 'User registered successfully.',
+            'token' => $token,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => $userData,
             'data' => [
                 'token' => $token,
                 'token_type' => 'Bearer',
-                'user' => $user,
+                'user' => $userData,
+                ...$userData,
             ],
         ], 201);
     }
@@ -66,13 +81,28 @@ class AuthController extends Controller
         $deviceName = $validated['device_name'] ?? 'mobile-app';
         $token = $user->createToken($deviceName)->plainTextToken;
 
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => 'practitioner',
+            'cabinet_name' => 'Cabinet Dentaire',
+            'cabinet_room' => 'Fauteuil 1',
+            'created_at' => $user->created_at?->toIso8601String(),
+        ];
+
         return response()->json([
             'status' => 'success',
             'message' => 'Authenticated successfully.',
+            'token' => $token,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => $userData,
             'data' => [
                 'token' => $token,
                 'token_type' => 'Bearer',
-                'user' => $user,
+                'user' => $userData,
+                ...$userData,
             ],
         ]);
     }
@@ -82,10 +112,23 @@ class AuthController extends Controller
      */
     public function user(Request $request): JsonResponse
     {
+        $user = $request->user();
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => 'practitioner',
+            'cabinet_name' => 'Cabinet Dentaire',
+            'cabinet_room' => 'Fauteuil 1',
+            'created_at' => $user->created_at?->toIso8601String(),
+        ];
+
         return response()->json([
             'status' => 'success',
+            'user' => $userData,
             'data' => [
-                'user' => $request->user(),
+                'user' => $userData,
+                ...$userData,
             ],
         ]);
     }
@@ -95,7 +138,7 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $request->user()->currentAccessToken()?->delete();
 
         return response()->json([
             'status' => 'success',

@@ -4,23 +4,55 @@ services:
             context: './vendor/laravel/sail/runtimes/8.5'
             dockerfile: Dockerfile
             args:
-                WWWGROUP: '${WWWGROUP}'
+                WWWGROUP: '${WWWGROUP:-1000}'
         image: 'sail-8.5/app'
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         ports:
-            - '${APP_PORT:-80}:80'
+            - '${APP_PORT:-8000}:80'
             - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
         environment:
-            WWWUSER: '${WWWUSER}'
+            WWWUSER: '${WWWUSER:-1000}'
             LARAVEL_SAIL: 1
             XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
             XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
             IGNITION_LOCAL_SITES_PATH: '${PWD}'
+            DB_HOST: pgsql
+            DB_PORT: 5432
         volumes:
             - '.:/var/www/html'
         networks:
             - sail
+        depends_on:
+            - pgsql
+    pgsql:
+        image: 'postgres:17-alpine'
+        ports:
+            - '${FORWARD_DB_PORT:-5455}:5432'
+        environment:
+            PGPASSWORD: '${DB_ADMIN_PASSWORD:-secret}'
+            POSTGRES_DB: '${DB_DATABASE:-steriqore}'
+            POSTGRES_USER: '${DB_ADMIN_USERNAME:-steriqore}'
+            POSTGRES_PASSWORD: '${DB_ADMIN_PASSWORD:-secret}'
+        volumes:
+            - 'sail-pgsql:/var/lib/postgresql/data'
+            - './docker/postgres/init:/docker-entrypoint-initdb.d'
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD
+                - pg_isready
+                - '-q'
+                - '-d'
+                - '${DB_DATABASE:-steriqore}'
+                - '-U'
+                - '${DB_ADMIN_USERNAME:-steriqore}'
+            retries: 5
+            timeout: 5s
 networks:
     sail:
         driver: bridge
+volumes:
+    sail-pgsql:
+        driver: local

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steriqore QA QR-Code Test Suite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #09090B;
+            color: #F4F4F5;
+            padding: 32px 20px;
+            line-height: 1.5;
+        }
+        .header {
+            max-width: 1200px;
+            margin: 0 auto 36px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #FFFFFF, #A1A1AA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header p {
+            color: #A1A1AA;
+            font-size: 15px;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+        .grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+        .card {
+            background: #18181B;
+            border-radius: 16px;
+            border: 1px solid #27272A;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: #3F3F46;
+        }
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #27272A;
+        }
+        .card-header h2 {
+            font-size: 17px;
+            font-weight: 700;
+            color: #FAFAFA;
+        }
+        .card-header .meta {
+            font-size: 12px;
+            color: #71717A;
+            margin-top: 2px;
+        }
+        .card-body {
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #09090B;
+        }
+        .qr-wrapper {
+            background: #FFFFFF;
+            padding: 14px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            margin-bottom: 16px;
+        }
+        .qr-img {
+            width: 220px;
+            height: 220px;
+            display: block;
+        }
+        .code-pill {
+            background: #27272A;
+            color: #E4E4E7;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .card-footer {
+            padding: 16px 20px;
+            margin-top: auto;
+            position: relative;
+        }
+        .status-stripe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .desc {
+            font-size: 12px;
+            color: #A1A1AA;
+            line-height: 1.4;
+        }
+        .arabic-text {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 6px;
+            direction: rtl;
+            text-align: right;
+        }
+        .copy-btn {
+            background: #27272A;
+            border: 1px solid #3F3F46;
+            color: #FAFAFA;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            margin-top: 8px;
+        }
+        .copy-btn:hover {
+            background: #3F3F46;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Steriqore Mobile QR QA Testing Suite</h1>
+        <p>Directly scan these QR codes using the mobile scanner camera or type the code in manual entry to test all 4 lifecycle states.</p>
+    </div>
+
+    <div class="grid">
+        
+            <div class="card">
+                <div class="card-header">
+                    <h2>Curette Gracey 1/2 Micro</h2>
+                    <div class="meta">Ref: CUR-GRA-012 • Lot: LOT-2026-89A • CYC-2026-089 (Melag 40B)</div>
+                </div>
+                <div class="card-body">
+                    <div class="qr-wrapper">
+                        <img src="/assets/qr-codes/qr_01_valid_gracey.png" alt="LBL-2026-001" class="qr-img">
+                    </div>
+                    <div class="code-pill">LBL-2026-001</div>
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText('LBL-2026-001'); alert('Copied: LBL-2026-001')">📋 Copy Code</button>
+                </div>
+                <div class="card-footer" style="background: #ECFDF5;">
+                    <div class="status-stripe" style="background: #10B981;"></div>
+                    <div class="badge" style="color: #10B981;">🟢 VALID / PRÊT À L'EMPLOI</div>
+                    <div class="desc" style="color: #374151;">Instrument conforme & stérile. Déclenche le flux complet de sélection du patient.</div>
+                    <div class="arabic-text" style="color: #10B981;">صالح للتشغيل (معلومات الأداة → اختيار المريض → تأكيد)</div>
+                </div>
+            </div>
+        
+            <div class="card">
+                <div class="card-header">
+                    <h2>Miroir Dentaire Front Surface #5</h2>
+                    <div class="meta">Ref: MIR-FS-05 • Lot: LOT-2025-01X • CYC-2025-044 (Melag 40B)</div>
+                </div>
+                <div class="card-body">
+                    <div class="qr-wrapper">
+                        <img src="/assets/qr-codes/qr_02_expired_miroir.png" alt="LBL-2026-002-EXP" class="qr-img">
+                    </div>
+                    <div class="code-pill">LBL-2026-002-EXP</div>
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText('LBL-2026-002-EXP'); alert('Copied: LBL-2026-002-EXP')">📋 Copy Code</button>
+                </div>
+                <div class="card-footer" style="background: #FEF2F2;">
+                    <div class="status-stripe" style="background: #EF4444;"></div>
+                    <div class="badge" style="color: #EF4444;">🔴 EXPIRED / DLC DÉPASSÉE</div>
+                    <div class="desc" style="color: #374151;">La date limite d'utilisation est échue. L'application bloque automatiquement l'usage (HTTP 410).</div>
+                    <div class="arabic-text" style="color: #EF4444;">منتهي الصلاحية (محظور الاستخدام)</div>
+                </div>
+            </div>
+        
+            <div class="card">
+                <div class="card-header">
+                    <h2>Sonde Parodontale WHO 11.5</h2>
+                    <div class="meta">Ref: SON-WHO-115 • Lot: LOT-2026-RECALL-9 • CYC-2026-078 (Euronda E10)</div>
+                </div>
+                <div class="card-body">
+                    <div class="qr-wrapper">
+                        <img src="/assets/qr-codes/qr_03_recalled_sonde.png" alt="LBL-2026-003-REC" class="qr-img">
+                    </div>
+                    <div class="code-pill">LBL-2026-003-REC</div>
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText('LBL-2026-003-REC'); alert('Copied: LBL-2026-003-REC')">📋 Copy Code</button>
+                </div>
+                <div class="card-footer" style="background: #FEF2F2;">
+                    <div class="status-stripe" style="background: #DC2626;"></div>
+                    <div class="badge" style="color: #DC2626;">🚨 RECALLED / LOT RETIRÉ</div>
+                    <div class="desc" style="color: #374151;">Échec de test d'indicateur biologique lors du cycle. Blocage strict avec affichage du motif.</div>
+                    <div class="arabic-text" style="color: #DC2626;">مسترجع / تالف بيولوجياً (محظور الاستخدام)</div>
+                </div>
+            </div>
+        
+            <div class="card">
+                <div class="card-header">
+                    <h2>Implant Titane 3.5mm Grade V</h2>
+                    <div class="meta">Ref: IMP-TIT-35 • Lot: LOT-2026-99B • CYC-2026-090 (Melag 40B)</div>
+                </div>
+                <div class="card-body">
+                    <div class="qr-wrapper">
+                        <img src="/assets/qr-codes/qr_04_already_used_implant.png" alt="LBL-2026-004-USD" class="qr-img">
+                    </div>
+                    <div class="code-pill">LBL-2026-004-USD</div>
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText('LBL-2026-004-USD'); alert('Copied: LBL-2026-004-USD')">📋 Copy Code</button>
+                </div>
+                <div class="card-footer" style="background: #FFFBEB;">
+                    <div class="status-stripe" style="background: #F59E0B;"></div>
+                    <div class="badge" style="color: #F59E0B;">⚠️ ALREADY USED / DÉJÀ UTILISÉ</div>
+                    <div class="desc" style="color: #374151;">Cet instrument a déjà été scanné et affecté à un dossier patient (HTTP 409).</div>
+                    <div class="arabic-text" style="color: #F59E0B;">مستخدم مسبقاً (تحذير وتنبيه للممارس)</div>
+                </div>
+            </div>
+        
+            <div class="card">
+                <div class="card-header">
+                    <h2>Pince Gouge Friedman 14cm</h2>
+                    <div class="meta">Ref: PIN-GOU-140 • Lot: LOT-2026-55C • CYC-2026-091 (Euronda E10)</div>
+                </div>
+                <div class="card-body">
+                    <div class="qr-wrapper">
+                        <img src="/assets/qr-codes/qr_05_valid_pince_gouge.png" alt="LBL-2026-005" class="qr-img">
+                    </div>
+                    <div class="code-pill">LBL-2026-005</div>
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText('LBL-2026-005'); alert('Copied: LBL-2026-005')">📋 Copy Code</button>
+                </div>
+                <div class="card-footer" style="background: #ECFDF5;">
+                    <div class="status-stripe" style="background: #10B981;"></div>
+                    <div class="badge" style="color: #10B981;">🟢 VALID / PRÊT À L'EMPLOI</div>
+                    <div class="desc" style="color: #374151;">Instrument chirurgical prêt à être affecté à un patient dans le bloc.</div>
+                    <div class="arabic-text" style="color: #10B981;">صالح للتشغيل (جراحة وأنسجة)</div>
+                </div>
+            </div>
+        
+    </div>
+</body>
+</html>
