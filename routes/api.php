@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\LabelController;
 use App\Http\Controllers\Api\V1\PatientController;
 use App\Http\Controllers\Api\V1\UsageController;
+use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -23,9 +24,11 @@ Route::prefix('v1')->group(function () {
                 'register' => 'POST /api/v1/register (or /api/v1/auth/register)',
                 'login' => 'POST /api/v1/login (or /api/v1/auth/login)',
                 'user' => 'GET /api/v1/user (or /api/v1/auth/me) [requires Bearer token]',
+                'users' => 'GET /api/v1/users [requires Bearer token]',
                 'logout' => 'POST /api/v1/logout (or /api/v1/auth/logout) [requires Bearer token]',
                 'alerts' => 'GET /api/v1/alerts [requires Bearer token]',
                 'stock_levels' => 'GET /api/v1/stock-levels [requires Bearer token]',
+                'cycles' => 'GET /api/v1/cycles [requires Bearer token]',
                 'patients' => 'GET /api/v1/patients [requires Bearer token]',
                 'labels' => 'GET /api/v1/labels [requires Bearer token]',
                 'label_detail' => 'GET /api/v1/labels/{code} [requires Bearer token]',
@@ -52,9 +55,17 @@ Route::prefix('v1')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 
+        // Users & Staff management
+        Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users', [UserController::class, 'store']);
+        Route::get('/users/{user}', [UserController::class, 'show']);
+        Route::match(['put', 'patch', 'post'], '/users/{user}', [UserController::class, 'update']);
+        Route::delete('/users/{user}', [UserController::class, 'destroy']);
+
         // Dashboard & Cycle inspection
         Route::get('/alerts', [DashboardController::class, 'alerts']);
         Route::get('/stock-levels', [DashboardController::class, 'stockLevels']);
+        Route::get('/cycles', [DashboardController::class, 'cycles']);
         Route::get('/cycles/{id}', [DashboardController::class, 'cycleDetail']);
         Route::get('/cycles/{id}/items', [DashboardController::class, 'cycleItems']);
         Route::get('/cycles/{id}/attachments', [DashboardController::class, 'cycleAttachments']);
