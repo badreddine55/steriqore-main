@@ -16,25 +16,33 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Truncate users table and create single Admin
+        // Truncate auth tokens, sessions, usages, labels, patients, users, cabinets
         DB::table('personal_access_tokens')->delete();
         DB::table('sessions')->delete();
         if (DB::getSchemaBuilder()->hasTable('instrument_usages')) {
-            DB::table('instrument_usages')->update(['user_id' => null]);
+            DB::table('instrument_usages')->delete();
+        }
+        if (DB::getSchemaBuilder()->hasTable('labels')) {
+            DB::table('labels')->delete();
+        }
+        if (DB::getSchemaBuilder()->hasTable('patients')) {
+            DB::table('patients')->delete();
         }
         User::query()->delete();
+        if (DB::getSchemaBuilder()->hasTable('cabinets')) {
+            DB::table('cabinets')->delete();
+        }
 
+        // Seed ONLY the Super Administrator
         User::create([
-            'name' => 'Administrator',
-            'email' => 'admin@steriqore.com',
-            'password' => bcrypt('password'),
-            'role' => 'admin',
+            'name' => 'Super Administrator',
+            'email' => 'superadmin@steriqore.com',
+            'password' => 'password',
+            'role' => 'super_admin',
+            'cabinet_id' => null,
+            'cabinet_name' => null,
+            'cabinet_room' => null,
             'email_verified_at' => now(),
-        ]);
-
-        $this->call([
-            PatientSeeder::class,
-            LabelSeeder::class,
         ]);
     }
 }

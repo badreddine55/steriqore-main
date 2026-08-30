@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
+use App\Models\Cabinet;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -16,15 +19,40 @@ class UserController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $authUser = $request->user();
+
+        if (! $authUser) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $query = User::query()->with('cabinet');
+
+        if ($authUser->isSuperAdmin()) {
+            // Super Admin can only see and manage Admins
+            $query->whereIn('role', ['admin', 'administrator']);
+        } elseif ($authUser->isAdmin()) {
+            // Admin can only see staff (stock_manager, practitioner, assistant) belonging to their own cabinet
+            $query->where('cabinet_id', $authUser->cabinet_id)
+                ->whereIn('role', ['stock_manager', 'practitioner', 'praticien', 'assistant']);
+        } else {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized. Staff members cannot manage users.',
+            ], 403);
+        }
+
         $role = $request->query('role');
         $search = $request->query('search') ?? $request->query('query');
 
-        $users = User::query()
+        $users = $query
             ->when($role, fn ($q) => $q->where('role', $role))
-            ->when($search, function ($query, $search) {
+            ->when($search, function ($q, $search) {
                 $term = '%'.mb_strtolower((string) $search).'%';
-                $query->where(function ($q) use ($term) {
-                    $q->whereRaw('LOWER(name) LIKE ?', [$term])
+                $q->where(function ($sub) use ($term) {
+                    $sub->whereRaw('LOWER(name) LIKE ?', [$term])
                         ->orWhereRaw('LOWER(email) LIKE ?', [$term]);
                 });
             })
@@ -45,9 +73,39 @@ class UserController extends Controller
     /**
      * Display the specified user.
      */
-    public function show(User $user): JsonResponse
+    public function show(Request $request, User $user): JsonResponse
     {
-        $userData = (new UserResource($user))->resolve();
+        $authUser = $request->user();
+
+        if (! $authUser) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        if ($authUser->isSuperAdmin()) {
+            if (! $user->isAdmin()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Super administrators can only view admin accounts.',
+                ], 403);
+            }
+        } elseif ($authUser->isAdmin()) {
+            if ($user->cabinet_id !== $authUser->cabinet_id || ! in_array($user->role, ['stock_manager', 'practitioner', 'praticien', 'assistant'], true)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized. You can only view staff in your own cabinet.',
+                ], 403);
+            }
+        } else {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized. Staff members cannot manage users.',
+            ], 403);
+        }
+
+        $userData = (new UserResource($user->loadMissing('cabinet')))->resolve();
 
         return response()->json([
             'status' => 'success',
@@ -57,43 +115,106 @@ class UserController extends Controller
     }
 
     /**
-     * Store a newly created user (Admin staff creation).
+     * Store a newly created user (Admin or Staff creation).
      */
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
-            'role' => ['nullable', 'string', 'in:admin,administrator,practitioner,assistant'],
-            'password' => ['nullable', 'string', 'min:6'],
-            'is_active' => ['nullable', 'boolean'],
-            'cabinet_name' => ['nullable', 'string', 'max:255'],
-            'cabinet_room' => ['nullable', 'string', 'max:255'],
-        ]);
+        $authUser = $request->user();
 
-        $password = ! empty($validated['password'])
-            ? Hash::make($validated['password'])
-            : Hash::make('password123');
+        if (! $authUser) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'role' => $validated['role'] ?? 'practitioner',
-            'password' => $password,
-            'is_active' => $validated['is_active'] ?? true,
-            'cabinet_name' => $validated['cabinet_name'] ?? 'Cabinet Dentaire',
-            'cabinet_room' => $validated['cabinet_room'] ?? 'Fauteuil 1',
-            'email_verified_at' => now(),
-        ]);
+        if ($authUser->isSuperAdmin()) {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+                'role' => ['nullable', 'string', 'in:admin,administrator'],
+                'password' => ['nullable', 'string', 'min:6'],
+                'is_active' => ['nullable', 'boolean'],
+                'cabinet_name' => ['nullable', 'string', 'max:255'],
+                'cabinet_address' => ['nullable', 'string', 'max:255'],
+                'cabinet_phone' => ['nullable', 'string', 'max:255'],
+                'cabinet_email' => ['nullable', 'string', 'max:255'],
+            ]);
 
-        $userData = (new UserResource($user))->resolve();
+            $user = DB::transaction(function () use ($validated) {
+                $cabinet = Cabinet::create([
+                    'name' => $validated['cabinet_name'] ?? 'Cabinet de '.$validated['name'],
+                    'address' => $validated['cabinet_address'] ?? null,
+                    'phone' => $validated['cabinet_phone'] ?? null,
+                    'email' => $validated['cabinet_email'] ?? null,
+                ]);
+
+                $password = ! empty($validated['password'])
+                    ? Hash::make($validated['password'])
+                    : Hash::make('password123');
+
+                return User::create([
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                    'role' => 'admin',
+                    'cabinet_id' => $cabinet->id,
+                    'cabinet_name' => $cabinet->name,
+                    'password' => $password,
+                    'is_active' => $validated['is_active'] ?? true,
+                    'email_verified_at' => now(),
+                ]);
+            });
+
+            $userData = (new UserResource($user->load('cabinet')))->resolve();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Admin created and cabinet auto-provisioned successfully.',
+                'data' => $userData,
+                'user' => $userData,
+            ], 201);
+        }
+
+        if ($authUser->isAdmin()) {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+                'role' => ['required', 'string', 'in:stock_manager,practitioner,praticien,assistant'],
+                'password' => ['nullable', 'string', 'min:6'],
+                'is_active' => ['nullable', 'boolean'],
+                'cabinet_room' => ['nullable', 'string', 'max:255'],
+            ]);
+
+            $password = ! empty($validated['password'])
+                ? Hash::make($validated['password'])
+                : Hash::make('password123');
+
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'role' => $validated['role'],
+                'cabinet_id' => $authUser->cabinet_id,
+                'cabinet_name' => $authUser->cabinet?->name ?? $authUser->cabinet_name,
+                'cabinet_room' => $validated['cabinet_room'] ?? 'Fauteuil 1',
+                'password' => $password,
+                'is_active' => $validated['is_active'] ?? true,
+                'email_verified_at' => now(),
+            ]);
+
+            $userData = (new UserResource($user->load('cabinet')))->resolve();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Staff user created successfully in your cabinet.',
+                'data' => $userData,
+                'user' => $userData,
+            ], 201);
+        }
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'User created successfully.',
-            'data' => $userData,
-            'user' => $userData,
-        ], 201);
+            'status' => 'error',
+            'message' => 'Unauthorized. Staff members cannot create users.',
+        ], 403);
     }
 
     /**
@@ -101,32 +222,106 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'role' => ['sometimes', 'string', 'in:admin,administrator,practitioner,assistant'],
-            'is_active' => ['sometimes', 'boolean'],
-            'password' => ['sometimes', 'nullable', 'string', 'min:6'],
-            'cabinet_name' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'cabinet_room' => ['sometimes', 'nullable', 'string', 'max:255'],
-        ]);
+        $authUser = $request->user();
 
-        if (isset($validated['password']) && ! empty($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
-        } else {
-            unset($validated['password']);
+        if (! $authUser) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated.',
+            ], 401);
         }
 
-        $user->update($validated);
+        if ($authUser->isSuperAdmin()) {
+            if (! $user->isAdmin()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Super administrators can only modify admin accounts.',
+                ], 403);
+            }
 
-        $userData = (new UserResource($user->fresh()))->resolve();
+            $validated = $request->validate([
+                'name' => ['sometimes', 'string', 'max:255'],
+                'email' => ['sometimes', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+                'role' => ['sometimes', 'string', 'in:admin,administrator'],
+                'is_active' => ['sometimes', 'boolean'],
+                'password' => ['sometimes', 'nullable', 'string', 'min:6'],
+                'cabinet_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+                'cabinet_address' => ['sometimes', 'nullable', 'string', 'max:255'],
+                'cabinet_phone' => ['sometimes', 'nullable', 'string', 'max:255'],
+                'cabinet_email' => ['sometimes', 'nullable', 'string', 'max:255'],
+            ]);
+
+            DB::transaction(function () use ($user, $validated) {
+                if (isset($validated['password']) && ! empty($validated['password'])) {
+                    $validated['password'] = Hash::make($validated['password']);
+                } else {
+                    unset($validated['password']);
+                }
+
+                if ($user->cabinet && (isset($validated['cabinet_name']) || isset($validated['cabinet_address']) || isset($validated['cabinet_phone']) || isset($validated['cabinet_email']))) {
+                    $user->cabinet->update(array_filter([
+                        'name' => $validated['cabinet_name'] ?? null,
+                        'address' => $validated['cabinet_address'] ?? null,
+                        'phone' => $validated['cabinet_phone'] ?? null,
+                        'email' => $validated['cabinet_email'] ?? null,
+                    ], fn ($v) => $v !== null));
+                }
+
+                $user->update($validated);
+            });
+
+            $userData = (new UserResource($user->fresh(['cabinet'])))->resolve();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Admin updated successfully.',
+                'data' => $userData,
+                'user' => $userData,
+            ]);
+        }
+
+        if ($authUser->isAdmin()) {
+            if ($user->cabinet_id !== $authUser->cabinet_id || ! in_array($user->role, ['stock_manager', 'practitioner', 'praticien', 'assistant'], true)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized. You can only update staff in your own cabinet.',
+                ], 403);
+            }
+
+            $validated = $request->validate([
+                'name' => ['sometimes', 'string', 'max:255'],
+                'email' => ['sometimes', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+                'role' => ['sometimes', 'string', 'in:stock_manager,practitioner,praticien,assistant'],
+                'is_active' => ['sometimes', 'boolean'],
+                'password' => ['sometimes', 'nullable', 'string', 'min:6'],
+                'cabinet_room' => ['sometimes', 'nullable', 'string', 'max:255'],
+            ]);
+
+            if (isset($validated['password']) && ! empty($validated['password'])) {
+                $validated['password'] = Hash::make($validated['password']);
+            } else {
+                unset($validated['password']);
+            }
+
+            // Ensure cabinet_id cannot be modified by admin
+            unset($validated['cabinet_id']);
+
+            $user->update($validated);
+
+            $userData = (new UserResource($user->fresh(['cabinet'])))->resolve();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Staff user updated successfully.',
+                'data' => $userData,
+                'user' => $userData,
+            ]);
+        }
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'User updated successfully.',
-            'data' => $userData,
-            'user' => $userData,
-        ]);
+            'status' => 'error',
+            'message' => 'Unauthorized. Staff members cannot modify users.',
+        ], 403);
     }
 
     /**
@@ -134,18 +329,57 @@ class UserController extends Controller
      */
     public function destroy(Request $request, User $user): JsonResponse
     {
-        if ($request->user()?->id === $user->id) {
+        $authUser = $request->user();
+
+        if (! $authUser) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        if ($authUser->id === $user->id) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'You cannot delete your own account.',
             ], 422);
         }
 
-        $user->delete();
+        if ($authUser->isSuperAdmin()) {
+            if (! $user->isAdmin()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Super administrators can only delete admin accounts.',
+                ], 403);
+            }
+
+            $user->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Admin deleted successfully.',
+            ]);
+        }
+
+        if ($authUser->isAdmin()) {
+            if ($user->cabinet_id !== $authUser->cabinet_id || ! in_array($user->role, ['stock_manager', 'practitioner', 'praticien', 'assistant'], true)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized. You can only delete staff in your own cabinet.',
+                ], 403);
+            }
+
+            $user->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Staff user deleted successfully.',
+            ]);
+        }
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'User deleted successfully.',
-        ]);
+            'status' => 'error',
+            'message' => 'Unauthorized. Staff members cannot delete users.',
+        ], 403);
     }
 }

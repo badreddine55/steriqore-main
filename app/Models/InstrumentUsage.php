@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\BelongsToCabinet;
 use Database\Factories\InstrumentUsageFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property int $cabinet_id
  * @property int $label_id
  * @property int $patient_id
  * @property int|null $user_id
@@ -23,7 +25,7 @@ use Illuminate\Support\Carbon;
 class InstrumentUsage extends Model
 {
     /** @use HasFactory<InstrumentUsageFactory> */
-    use HasFactory;
+    use BelongsToCabinet, HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -31,6 +33,7 @@ class InstrumentUsage extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'cabinet_id',
         'label_id',
         'patient_id',
         'user_id',
@@ -48,6 +51,7 @@ class InstrumentUsage extends Model
     protected function casts(): array
     {
         return [
+            'cabinet_id' => 'integer',
             'used_at' => 'datetime',
         ];
     }

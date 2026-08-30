@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\BelongsToCabinet;
 use Database\Factories\PatientFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,6 +11,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property int $cabinet_id
  * @property string $first_name
  * @property string $last_name
  * @property string $dossier_id
@@ -28,7 +30,7 @@ use Illuminate\Support\Carbon;
 class Patient extends Model
 {
     /** @use HasFactory<PatientFactory> */
-    use HasFactory;
+    use BelongsToCabinet, HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -36,6 +38,7 @@ class Patient extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'cabinet_id',
         'first_name',
         'last_name',
         'dossier_id',
@@ -57,6 +60,7 @@ class Patient extends Model
     protected function casts(): array
     {
         return [
+            'cabinet_id' => 'integer',
             'allergies' => 'array',
             'allergy_severities' => 'array',
             'last_visit' => 'date:Y-m-d',

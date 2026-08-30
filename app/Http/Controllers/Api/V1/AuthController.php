@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
+use App\Models\Cabinet;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,27 +23,44 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'string', Password::defaults()],
+            'role' => ['nullable', 'string', 'in:super_admin,admin,administrator,stock_manager,practitioner,praticien,assistant'],
+            'cabinet_name' => ['nullable', 'string', 'max:255'],
+            'cabinet_room' => ['nullable', 'string', 'max:255'],
             'device_name' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $role = $validated['role'] ?? 'practitioner';
+        $cabinetId = null;
+
+        if ($role !== 'super_admin') {
+            if (in_array($role, ['admin', 'administrator'], true)) {
+                $cabinet = Cabinet::create([
+                    'name' => $validated['cabinet_name'] ?? 'Cabinet de '.$validated['name'],
+                ]);
+                $cabinetId = $cabinet->id;
+            } else {
+                $cabinet = Cabinet::first() ?? Cabinet::create([
+                    'name' => $validated['cabinet_name'] ?? 'Cabinet Dentaire',
+                ]);
+                $cabinetId = $cabinet->id;
+            }
+        }
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'role' => $role,
+            'cabinet_id' => $cabinetId,
+            'cabinet_name' => $validated['cabinet_name'] ?? ($cabinetId ? 'Cabinet Dentaire' : null),
+            'cabinet_room' => $validated['cabinet_room'] ?? ($cabinetId ? 'Fauteuil 1' : null),
+            'email_verified_at' => now(),
         ]);
 
         $deviceName = $validated['device_name'] ?? 'mobile-app';
         $token = $user->createToken($deviceName)->plainTextToken;
 
-        $userData = [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role ?? 'practitioner',
-            'cabinet_name' => 'Cabinet Dentaire',
-            'cabinet_room' => 'Fauteuil 1',
-            'created_at' => $user->created_at?->toIso8601String(),
-        ];
+        $userData = (new UserResource($user))->resolve();
 
         return response()->json([
             'status' => 'success',
@@ -70,7 +89,7 @@ class AuthController extends Controller
             'device_name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $user = User::where('email', $validated['email'])->first();
+        $user = User::with('cabinet')->where('email', $validated['email'])->first();
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
             throw ValidationException::withMessages([
@@ -81,15 +100,7 @@ class AuthController extends Controller
         $deviceName = $validated['device_name'] ?? 'mobile-app';
         $token = $user->createToken($deviceName)->plainTextToken;
 
-        $userData = [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role ?? 'practitioner',
-            'cabinet_name' => 'Cabinet Dentaire',
-            'cabinet_room' => 'Fauteuil 1',
-            'created_at' => $user->created_at?->toIso8601String(),
-        ];
+        $userData = (new UserResource($user))->resolve();
 
         return response()->json([
             'status' => 'success',
@@ -112,16 +123,8 @@ class AuthController extends Controller
      */
     public function user(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $userData = [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role ?? 'practitioner',
-            'cabinet_name' => 'Cabinet Dentaire',
-            'cabinet_room' => 'Fauteuil 1',
-            'created_at' => $user->created_at?->toIso8601String(),
-        ];
+        $user = $request->user()->loadMissing('cabinet');
+        $userData = (new UserResource($user))->resolve();
 
         return response()->json([
             'status' => 'success',

@@ -43,9 +43,10 @@ class LabelController extends Controller
      */
     public function show(string $code): JsonResponse
     {
-        $label = Label::where('code', $code)
-            ->orWhere('id', is_numeric($code) ? (int) $code : null)
-            ->first();
+        $label = Label::where(function ($query) use ($code) {
+            $query->where('code', $code)
+                ->orWhere('id', is_numeric($code) ? (int) $code : null);
+        })->first();
 
         if (! $label) {
             return response()->json([
@@ -65,9 +66,10 @@ class LabelController extends Controller
      */
     public function recordUsage(Request $request, string $labelId): JsonResponse
     {
-        $label = Label::where('id', is_numeric($labelId) ? (int) $labelId : null)
-            ->orWhere('code', $labelId)
-            ->first();
+        $label = Label::where(function ($query) use ($labelId) {
+            $query->where('id', is_numeric($labelId) ? (int) $labelId : null)
+                ->orWhere('code', $labelId);
+        })->first();
 
         if (! $label) {
             return response()->json([
@@ -123,6 +125,7 @@ class LabelController extends Controller
         $usedAt = isset($validated['used_at']) ? now()->parse($validated['used_at']) : now();
 
         $usage = InstrumentUsage::create([
+            'cabinet_id' => $request->user()?->cabinet_id ?? $label->cabinet_id,
             'label_id' => $label->id,
             'patient_id' => $patient->id,
             'user_id' => $request->user()?->id,

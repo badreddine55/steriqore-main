@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Cabinet;
 use App\Models\InstrumentUsage;
 use App\Models\Label;
 use App\Models\Patient;
@@ -16,12 +17,20 @@ class LabelSeeder extends Seeder
      */
     public function run(): void
     {
+        $cabinet = Cabinet::first() ?? Cabinet::create([
+            'name' => 'Cabinet Dentaire Principal',
+            'address' => '12 Rue de la Paix, 75002 Paris',
+            'phone' => '+33 1 42 68 00 00',
+            'email' => 'contact@cabinetdentaire.fr',
+        ]);
+
         $patient = Patient::first();
-        $user = User::first();
+        $user = User::where('role', 'practitioner')->first() ?? User::first();
 
         $labels = [
             // 🟢 VALID 1: Primary Valid Label (Curette)
             [
+                'cabinet_id' => $cabinet->id,
                 'code' => 'LBL-2026-001',
                 'product_name' => 'Curette Gracey 1/2 Micro',
                 'reference' => 'CUR-GRA-012',
@@ -36,6 +45,7 @@ class LabelSeeder extends Seeder
             ],
             // 🟢 VALID 2: Test Alias 01_VALID
             [
+                'cabinet_id' => $cabinet->id,
                 'code' => '01_VALID',
                 'product_name' => 'Curette Gracey 1/2 Micro (QA)',
                 'reference' => 'CUR-GRA-012',
@@ -50,6 +60,7 @@ class LabelSeeder extends Seeder
             ],
             // 🔴 EXPIRED 1: DLC Passed
             [
+                'cabinet_id' => $cabinet->id,
                 'code' => 'LBL-2026-002-EXP',
                 'product_name' => 'Miroir Dentaire Front Surface #5',
                 'reference' => 'MIR-FS-05',
@@ -64,6 +75,7 @@ class LabelSeeder extends Seeder
             ],
             // 🔴 EXPIRED 2: Test Alias 02_EXPIRED
             [
+                'cabinet_id' => $cabinet->id,
                 'code' => '02_EXPIRED',
                 'product_name' => 'Miroir Dentaire Front Surface #5 (QA)',
                 'reference' => 'MIR-FS-05',
@@ -78,6 +90,7 @@ class LabelSeeder extends Seeder
             ],
             // 🚨 RECALLED 1: Biological test failed
             [
+                'cabinet_id' => $cabinet->id,
                 'code' => 'LBL-2026-003-REC',
                 'product_name' => 'Sonde Parodontale WHO 11.5',
                 'reference' => 'SON-WHO-115',
@@ -93,6 +106,7 @@ class LabelSeeder extends Seeder
             ],
             // 🚨 RECALLED 2: Test Alias 03_RECALLED
             [
+                'cabinet_id' => $cabinet->id,
                 'code' => '03_RECALLED',
                 'product_name' => 'Sonde Parodontale WHO 11.5 (QA)',
                 'reference' => 'SON-WHO-115',
@@ -108,6 +122,7 @@ class LabelSeeder extends Seeder
             ],
             // ⚠️ ALREADY USED 1: Previously Used Instrument
             [
+                'cabinet_id' => $cabinet->id,
                 'code' => 'LBL-2026-004-USD',
                 'product_name' => 'Implant Titane 3.5mm Grade V',
                 'reference' => 'IMP-TIT-35',
@@ -125,6 +140,7 @@ class LabelSeeder extends Seeder
             ],
             // ⚠️ ALREADY USED 2: Test Alias 05_ALREADY_USED
             [
+                'cabinet_id' => $cabinet->id,
                 'code' => '05_ALREADY_USED',
                 'product_name' => 'Implant Titane 3.5mm Grade V (QA)',
                 'reference' => 'IMP-TIT-35',
@@ -142,6 +158,7 @@ class LabelSeeder extends Seeder
             ],
             // Additional Valid Instruments
             [
+                'cabinet_id' => $cabinet->id,
                 'code' => 'LBL-2026-005',
                 'product_name' => 'Pince Gouge Friedman 14cm',
                 'reference' => 'PIN-GOU-140',
@@ -155,6 +172,7 @@ class LabelSeeder extends Seeder
                 'operator_name' => 'Dr. Martin',
             ],
             [
+                'cabinet_id' => $cabinet->id,
                 'code' => 'LBL-2026-006',
                 'product_name' => 'Syndesmome Droit Bernard',
                 'reference' => 'SYN-DRO-001',
@@ -180,6 +198,7 @@ class LabelSeeder extends Seeder
                 InstrumentUsage::firstOrCreate(
                     ['label_id' => $label->id],
                     [
+                        'cabinet_id' => $cabinet->id,
                         'patient_id' => $patient->id,
                         'user_id' => $user?->id,
                         'idempotency_key' => 'SEED-USAGE-'.Str::slug($label->code),

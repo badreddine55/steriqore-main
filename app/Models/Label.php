@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\BelongsToCabinet;
 use Database\Factories\LabelFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property int $cabinet_id
  * @property string $code
  * @property string $product_name
  * @property string|null $reference
@@ -32,7 +34,7 @@ use Illuminate\Support\Carbon;
 class Label extends Model
 {
     /** @use HasFactory<LabelFactory> */
-    use HasFactory;
+    use BelongsToCabinet, HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -40,6 +42,7 @@ class Label extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'cabinet_id',
         'code',
         'product_name',
         'reference',
@@ -65,6 +68,7 @@ class Label extends Model
     protected function casts(): array
     {
         return [
+            'cabinet_id' => 'integer',
             'expiration_date' => 'datetime',
             'sterilization_date' => 'datetime',
             'used_at' => 'datetime',

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Cabinet;
 use App\Models\Patient;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -41,6 +42,7 @@ class PatientFactory extends Factory
         }
 
         return [
+            'cabinet_id' => fn () => Cabinet::first()?->id ?? Cabinet::factory()->create()->id,
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'dossier_id' => 'DOS-'.fake()->numberBetween(2023, 2026).'-'.fake()->unique()->numerify('###'),
@@ -53,6 +55,16 @@ class PatientFactory extends Factory
             'email' => fake()->safeEmail(),
             'notes' => fake()->optional(0.4)->sentence(),
         ];
+    }
+
+    /**
+     * Link the patient to a specific cabinet.
+     */
+    public function forCabinet(Cabinet $cabinet): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'cabinet_id' => $cabinet->id,
+        ]);
     }
 
     /**

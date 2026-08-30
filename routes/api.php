@@ -55,33 +55,36 @@ Route::prefix('v1')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 
-        // Users & Staff management
+        // Users & Staff management (super_admin manages admins, admin manages own cabinet staff)
         Route::get('/users', [UserController::class, 'index']);
         Route::post('/users', [UserController::class, 'store']);
         Route::get('/users/{user}', [UserController::class, 'show']);
         Route::match(['put', 'patch', 'post'], '/users/{user}', [UserController::class, 'update']);
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
 
-        // Dashboard & Cycle inspection
-        Route::get('/alerts', [DashboardController::class, 'alerts']);
-        Route::get('/stock-levels', [DashboardController::class, 'stockLevels']);
-        Route::get('/cycles', [DashboardController::class, 'cycles']);
-        Route::get('/cycles/{id}', [DashboardController::class, 'cycleDetail']);
-        Route::get('/cycles/{id}/items', [DashboardController::class, 'cycleItems']);
-        Route::get('/cycles/{id}/attachments', [DashboardController::class, 'cycleAttachments']);
+        // Cabinet-scoped routes (blocked for super_admin with 403, scoped to tenant cabinet)
+        Route::middleware('cabinet.scoped')->group(function () {
+            // Dashboard & Cycle inspection
+            Route::get('/alerts', [DashboardController::class, 'alerts']);
+            Route::get('/stock-levels', [DashboardController::class, 'stockLevels']);
+            Route::get('/cycles', [DashboardController::class, 'cycles']);
+            Route::get('/cycles/{id}', [DashboardController::class, 'cycleDetail']);
+            Route::get('/cycles/{id}/items', [DashboardController::class, 'cycleItems']);
+            Route::get('/cycles/{id}/attachments', [DashboardController::class, 'cycleAttachments']);
 
-        // Patient directory routes (read-only for practitioners)
-        Route::get('/patients', [PatientController::class, 'index']);
-        Route::get('/patients/{patient}', [PatientController::class, 'show']);
+            // Patient directory routes
+            Route::get('/patients', [PatientController::class, 'index']);
+            Route::get('/patients/{patient}', [PatientController::class, 'show']);
 
-        // Scanner & Label traceability routes
-        Route::get('/labels', [LabelController::class, 'index']);
-        Route::get('/labels/{code}', [LabelController::class, 'show']);
+            // Scanner & Label traceability routes
+            Route::get('/labels', [LabelController::class, 'index']);
+            Route::get('/labels/{code}', [LabelController::class, 'show']);
 
-        // Usage recording & history routes
-        Route::post('/labels/{labelId}/usage', [LabelController::class, 'recordUsage']);
-        Route::get('/practitioner/usages', [UsageController::class, 'practitionerHistory']);
-        Route::get('/usages', [UsageController::class, 'practitionerHistory']);
+            // Usage recording & history routes
+            Route::post('/labels/{labelId}/usage', [LabelController::class, 'recordUsage']);
+            Route::get('/practitioner/usages', [UsageController::class, 'practitionerHistory']);
+            Route::get('/usages', [UsageController::class, 'practitionerHistory']);
+        });
     });
 });
 

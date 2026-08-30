@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Cabinet;
 use App\Models\Patient;
 use Illuminate\Database\Seeder;
 
@@ -12,8 +13,16 @@ class PatientSeeder extends Seeder
      */
     public function run(): void
     {
+        $cabinet = Cabinet::first() ?? Cabinet::create([
+            'name' => 'Cabinet Dentaire Principal',
+            'address' => '12 Rue de la Paix, 75002 Paris',
+            'phone' => '+33 1 42 68 00 00',
+            'email' => 'contact@cabinetdentaire.fr',
+        ]);
+
         $patients = [
             [
+                'cabinet_id' => $cabinet->id,
                 'first_name' => 'Marie',
                 'last_name' => 'Dubois',
                 'dossier_id' => 'DOS-2024-001',
@@ -27,6 +36,7 @@ class PatientSeeder extends Seeder
                 'notes' => 'Allergie sévère à la pénicilline et intolérance au latex.',
             ],
             [
+                'cabinet_id' => $cabinet->id,
                 'first_name' => 'Jean',
                 'last_name' => 'Moreau',
                 'dossier_id' => 'DOS-2024-045',
@@ -40,6 +50,7 @@ class PatientSeeder extends Seeder
                 'notes' => 'Sensibilité aux AINS.',
             ],
             [
+                'cabinet_id' => $cabinet->id,
                 'first_name' => 'Sophie',
                 'last_name' => 'Lefèvre',
                 'dossier_id' => 'DOS-2025-112',
@@ -53,6 +64,7 @@ class PatientSeeder extends Seeder
                 'notes' => 'Aucune allergie connue.',
             ],
             [
+                'cabinet_id' => $cabinet->id,
                 'first_name' => 'Pierre',
                 'last_name' => 'Bernard',
                 'dossier_id' => 'DOS-2023-089',
@@ -66,6 +78,7 @@ class PatientSeeder extends Seeder
                 'notes' => 'Attention: anesthésique local sans lidocaïne impératif.',
             ],
             [
+                'cabinet_id' => $cabinet->id,
                 'first_name' => 'Claire',
                 'last_name' => 'Rousseau',
                 'dossier_id' => 'DOS-2025-234',
@@ -79,6 +92,7 @@ class PatientSeeder extends Seeder
                 'notes' => 'Prémédication alternative recommandée.',
             ],
             [
+                'cabinet_id' => $cabinet->id,
                 'first_name' => 'Marc',
                 'last_name' => 'Vasseur',
                 'dossier_id' => 'DOS-2026-015',
@@ -92,6 +106,7 @@ class PatientSeeder extends Seeder
                 'notes' => 'Traitement orthodontique en cours.',
             ],
             [
+                'cabinet_id' => $cabinet->id,
                 'first_name' => 'Élodie',
                 'last_name' => 'Fontaine',
                 'dossier_id' => 'DOS-2024-178',
@@ -105,6 +120,7 @@ class PatientSeeder extends Seeder
                 'notes' => 'Matériel sans latex obligatoire.',
             ],
             [
+                'cabinet_id' => $cabinet->id,
                 'first_name' => 'Lucas',
                 'last_name' => 'Mercier',
                 'dossier_id' => 'DOS-2026-042',

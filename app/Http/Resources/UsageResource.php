@@ -20,6 +20,7 @@ class UsageResource extends JsonResource
     {
         return [
             'id' => (string) $this->id,
+            'cabinet_id' => $this->cabinet_id,
             'idempotency_key' => $this->idempotency_key,
             'label_id' => (string) $this->label_id,
             'label_code' => $this->label->code ?? '',

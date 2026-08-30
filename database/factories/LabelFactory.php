@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Cabinet;
 use App\Models\Label;
 use App\Models\Patient;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -39,6 +40,7 @@ class LabelFactory extends Factory
         $cycleNum = fake()->numberBetween(50, 120);
 
         return [
+            'cabinet_id' => fn () => Cabinet::first()?->id ?? Cabinet::factory()->create()->id,
             'code' => 'LBL-'.fake()->numberBetween(2025, 2026).'-'.fake()->unique()->numerify('####'),
             'product_name' => $instrument['name'],
             'reference' => $instrument['ref'],
@@ -55,6 +57,16 @@ class LabelFactory extends Factory
             'used_by_patient_name' => null,
             'operator_name' => fake()->randomElement(['Dr. Dupont', 'Dr. Martin', 'Dr. Moreau', 'Assistante Sarah']),
         ];
+    }
+
+    /**
+     * Link the label to a specific cabinet.
+     */
+    public function forCabinet(Cabinet $cabinet): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'cabinet_id' => $cabinet->id,
+        ]);
     }
 
     /**
@@ -89,6 +101,7 @@ class LabelFactory extends Factory
             $patientInstance = $patient ?? Patient::first() ?? Patient::factory()->create();
 
             return [
+                'cabinet_id' => $patientInstance->cabinet_id ?? (Cabinet::first()?->id ?? Cabinet::factory()->create()->id),
                 'status' => 'already_used',
                 'used_at' => $usedAt ?? now()->subHours(4),
                 'used_by_patient_id' => $patientInstance->id,

@@ -20,6 +20,7 @@ class LabelResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'cabinet_id' => $this->cabinet_id,
             'code' => $this->code,
             'product_name' => $this->product_name,
             'reference' => $this->reference,
